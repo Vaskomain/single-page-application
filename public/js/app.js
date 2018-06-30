@@ -42,6 +42,28 @@ window.addEventListener('load',()=>{
         }
     });
 
+    const getConversionResults = async () => {
+        const from = $('#from').val();
+        const to = $('#to').val();
+        const amount = $('#amount').val();
+        try {
+            const response = await api.post('/convert', {from,to});
+            const {rate} = response.data;
+            const result = rate * amount;
+            $('#result').html(`${to} ${result}`)
+        } catch (error) {
+            showError(error)
+        } finally {
+            $('#result-segment').removeClass('loading');
+        }
+    };
+
+    const convertRatesHandler = () => {
+        if ($('.ui.form').form('is valid')) {
+            
+        }
+    }
+
     router.add('/exchange', ()=>{
         let html = exchangeTemplate();
         el.html(html);
