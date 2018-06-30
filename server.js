@@ -1,5 +1,6 @@
 require('dotenv').config();
-const {getRates} = require('./lib/fixer-service');
+const {getRates,getSymbols,} = require('./lib/fixer-service');
+const {convertCurrency} = require('./lib/free-currency-service');
 const express = require('express');
 const app = express();
 const port = process.env.PORT;
@@ -25,6 +26,27 @@ app.get('/api/rates',async (req,res) => {
         errorHandler (error, req, res);
     }
 });
+
+app.get('/api/symbols', async (req,res) => {
+    try {
+        const data = await getSymbols();
+        res.setHeader('Content-Type','application/json');
+        res.send(data);
+    } catch (error) {
+        errorHandler (error, req, res);
+    }
+})
+
+app.post('/api/convert', async (req,res) => {
+    try {
+        const {from, to} = req.data;
+        const data = await convertCurrency(from,to);
+        res.setHeader('Content-Type','application/json');
+        res.send(data);
+    } catch (error) {
+        errorHandler (error, req, res);
+    }
+})
 
 app.use(((req,res)=> res.sendFile(`${__dirname}/public/index.html`)));
 app.listen(port,()=>{
