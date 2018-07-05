@@ -1,8 +1,12 @@
 require('dotenv').config();
-const {getRates,getSymbols,} = require('./lib/fixer-service');
+const {getRates,getSymbols,getHistoricalRate} = require('./lib/fixer-service');
 const {convertCurrency} = require('./lib/free-currency-service');
+const bodyParser = require('body-parser');
 const express = require('express');
 const app = express();
+app.use(bodyParser.urlencoded({extended:true,}));
+app.use(bodyParser.json());
+
 const port = process.env.PORT;
 app.use(express.static('public'));
 app.use('/scripts',express.static(`${__dirname}/node_modules/`));
@@ -39,7 +43,7 @@ app.get('/api/symbols', async (req,res) => {
 
 app.post('/api/convert', async (req,res) => {
     try {
-        const {from, to} = req.data;
+        const {from, to} = req.body;
         const data = await convertCurrency(from,to);
         res.setHeader('Content-Type','application/json');
         res.send(data);
@@ -47,6 +51,18 @@ app.post('/api/convert', async (req,res) => {
         errorHandler (error, req, res);
     }
 })
+
+app.post('/api/historical', async (req,res) => {
+    try {
+        const {date} = req.body;
+        const data = await getHistoricalRate(date);
+        res.setHeader('Content-Type','application/json');
+        res.send(data);
+    } catch (error) {
+        errorHandler (error, req, res);
+    }
+})
+
 
 app.use(((req,res)=> res.sendFile(`${__dirname}/public/index.html`)));
 app.listen(port,()=>{

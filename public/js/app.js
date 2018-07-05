@@ -60,18 +60,75 @@ window.addEventListener('load',()=>{
 
     const convertRatesHandler = () => {
         if ($('.ui.form').form('is valid')) {
-            
+            $('ui.error.message').hide();
+            $('#result-segment').addClass('loading');
+            getConversionResults();
+            return false;
         }
+        return true;
     }
 
-    router.add('/exchange', ()=>{
+    router.add('/exchange', async ()=>{
         let html = exchangeTemplate();
         el.html(html);
+        try{
+            const response = await api.get('/symbols');
+            const {symbols} = response.data;
+            html = exchangeTemplate({symbols});
+            el.html(html);
+            $('.loading').removeClass('loading');
+            $('.ui.form').form({
+                fields: {
+                    from: 'empty',
+                    to: 'empty',
+                    amount: 'decimal',
+                },
+            });
+            $('.submit').click(convertRatesHandler);
+        } catch (error) {
+            showError(error);
+        }
     });
+
+    const getHistoricalRates = async () => {
+        const date = $('#date').val();
+        try {
+            const response = await api.post('/historical', {date});
+            const {base, rates} = response.data;
+            html = ratesTemplate({base, date, rates});
+            $('#historical-table').html(html);
+        } catch (error) {
+            showError(error)
+        } finally {
+            $('.segment').removeClass('loading');
+        }
+    };
+
+    const historicalRatesHandler = () => {
+        if ($('.ui.form').form('is valid')) {
+            $('ui.error.message').hide();
+            $('.segment').addClass('loading');
+            getHistoricalRates();
+            return false;
+        }
+        return true;
+    }
 
     router.add('/historical', ()=>{
         let html = historicalTemplate();
         el.html(html);
+        $('#calendar').calendar({
+            type: 'date',
+            formatter: {
+                date: date => new Date(date).toISOString().split('T')[0],
+            },
+        });
+        $('ui form').form({
+            fields:{
+                date: 'empty',
+            },
+        });
+        $('.submit').click(historicalRatesHandler);
     });
 
     router.navigateTo(window.location.pathname);
